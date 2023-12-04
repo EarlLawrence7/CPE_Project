@@ -195,8 +195,8 @@ namespace MidtermProject
         {
             //Add movies
             Movie movie1 = new Movie("''The Imong mama''", "Drama", new DateTime(2023, 9, 20), 120, "PG-18");
-            Movie movie2 = new Movie("''The Akong mama''", "Drama/Action", new DateTime(2023, 9, 29), 190, "PG-18");
-            Movie movie3 = new Movie("''The Iyang mama''", "Drama/Horror", new DateTime(2023, 9, 29), 135, "PG-18");
+            Movie movie2 = new Movie("''The Akong mama''", "Drama", new DateTime(2023, 9, 29), 190, "PG-18");
+            Movie movie3 = new Movie("''The Iyang mama''", "Horror", new DateTime(2023, 9, 29), 135, "PG-18");
             Movie movie4 = new Movie("''I love CIT-U''", "Horror", new DateTime(2023, 9, 22), 120, "18");
             Movie movie5 = new Movie("''HAHAHAHAHAHAHAHA''", "Comedy", new DateTime(2023, 9, 23), 100, "PG-13");
             Movie movie6 = new Movie("''In your dreams''", "Fantasy", new DateTime(2023, 9, 26), 110, "G");
@@ -236,7 +236,6 @@ namespace MidtermProject
             users.Add(user2);
             users.Add(user3);
         }
-
         static bool Login()
         {
             int loginAttempts = 0;
@@ -375,33 +374,101 @@ namespace MidtermProject
 
         static void BrowseMovies()
         {
-            Console.WriteLine("\n\t\t\t\t\tAvailable Movies:");
-            foreach (Movie movie in movies)
+            while (true)
             {
-                Console.WriteLine("\n\t\t\t" + movie);
+              Console.WriteLine("\n\t\t\t\t\tAvailable Movies:");
+
+                Console.Clear();
+                // Display genres
+                var genres = movies.Select(movie => movie.Genre).Distinct().ToList();
+                Console.WriteLine("\n\n\n\t\t\t\t\t" + string.Join(", ", genres));             
+                Console.WriteLine("\n\t\t\t\t\t-------------------------------------");
+                Console.Write("\n\t\t\t\t\tChoose a genre to browse movies : ");
+                string chosenGenre = Console.ReadLine();
+                Console.Clear();
+                if (chosenGenre.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.Clear();
+                    return;
+                }
+
+                // Filter movies by genre
+                var filteredMovies = movies.Where(movie => movie.Genre.Equals(chosenGenre, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                if (filteredMovies.Count == 0)
+                {
+                    Console.WriteLine($"\n\t\t\t\t\tNo movies found for the genre: {chosenGenre}");
+                    Console.WriteLine("\t\t\tPress any key to continue browsing or 'exit' to return to Main menu.");
+                    Console.ReadKey();
+                    Console.Clear();
+                    continue;
+                }
+
+                Console.WriteLine($"\n\t\t\t\t\tMovies in the selected genre ({chosenGenre}):");
+                foreach (Movie movie in filteredMovies)
+                {
+                    Console.WriteLine("\n\t\t\t" + movie);
+                }
+
+                Console.WriteLine("\t\t\t----------------------------------------------------------------------");
+                Console.WriteLine("\t\t\tPress any key to continue browsing or 'exit' to return to Main menu.");
+                ConsoleKeyInfo key = Console.ReadKey();
+                if (key.KeyChar == 'e' || key.KeyChar == 'E')
+                {
+                    Console.Clear();
+                    return;
+                }
+                Console.Clear();
             }
-            Console.WriteLine("\t\t\t----------------------------------------------------------------------");
-            Console.WriteLine("\n\t\t\t\t      Press any key to return to the Main menu.");
-            Console.ReadKey();
-            Console.Clear();
         }
 
         static void BookTickets()
         {
             Console.Clear();
+            // Display genres
+            var genres = movies.Select(movie => movie.Genre).Distinct().ToList();
+            Console.WriteLine("\n\t\t\t\t\t" + string.Join(", ", genres));
+           
+            Console.Write("\n\t\t\t\t\tChoose a genre to browse movies: ");
+            string chosenGenre = Console.ReadLine();
+
+            // Filter movies by genre
+            var filteredMovies = movies.Where(movie => movie.Genre.Equals(chosenGenre, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (filteredMovies.Count == 0)
+            {
+                Console.Clear();
+                Console.WriteLine($"\n\t\t\t\t\tNo movies Found: {chosenGenre}");
+                Console.WriteLine("\n\t\t\t\t\tPress any key to return to the Main menu.");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+            Console.Clear();
+
             Console.WriteLine("\t\t\t\t\tAvailable Showtimes:");
             int index = 0;
-            foreach (Showtime showtime in showtimes)
+            foreach (Showtime showtime in showtimes.Where(s => s.Movie.Genre.Equals(chosenGenre, StringComparison.OrdinalIgnoreCase)))
             {
                 Console.WriteLine($"\n\t\t{index + 1}.{showtime.Movie.Title} ({showtime.Movie.Genre}) ({showtime.DateTime}) - Available Tickets: {showtime.AvailableTickets}");
                 index++;
             }
+
+            if (index == 0)
+            {
+                Console.WriteLine($"\n\t\t\t\t\tNo showtimes found for the genre: {chosenGenre}");
+                Console.WriteLine("\n\t\t\t\t\tPress any key to return to the Main menu.");
+                Console.ReadKey();
+                Console.Clear();
+                return;
+            }
+
             Console.WriteLine("\n========================================================================================================================");
             Console.Write($"\n\n\t\t\t\t\tEnter your choice(1 to {index} ): ");
 
             if (int.TryParse(Console.ReadLine(), out int showtimeChoice) && showtimeChoice >= 1 && showtimeChoice <= index)
             {
-                Showtime selectedShowtime = showtimes[showtimeChoice - 1];
+                Showtime selectedShowtime = showtimes.Where(s => s.Movie.Genre.Equals(chosenGenre, StringComparison.OrdinalIgnoreCase)).ToList()[showtimeChoice - 1];
 
                 Console.Write("\t\t\t\t\tEnter the number of tickets to book: ");
 
@@ -501,45 +568,42 @@ namespace MidtermProject
         }
         static void PrintTickets()
         {
-            if (currentUser != null)
+            try
             {
-                // Filter bookings for the current user
-                var userBookings = currentUser.Bookings;
-
-                if (userBookings.Count == 0)
+                Console.Clear();
+                if (currentUser != null && currentUser.Bookings.Count > 0)
                 {
-                    Console.WriteLine("\n\n\n\n\t\t\t\t\tYOU HAVE NOT BOOKED ANY TICKETS YET..");
+                    int ticketNumber = 1;
+                    foreach (Booking booking in currentUser.Bookings)
+                    {
+                        Console.WriteLine($"\n\t\t\tTicket {ticketNumber} Details:");
+                        Console.WriteLine($"\t\t\tMovie: {booking.Showtime.Movie.Title}");
+                        Console.WriteLine($"\t\t\tGenre: {booking.Showtime.Movie.Genre}");
+                        Console.WriteLine($"\t\t\tShowtime: {booking.Showtime.DateTime}");
+                        Console.WriteLine($"\t\t\tNumber of Tickets: {booking.NumTickets}");
+                        Console.WriteLine("\t\t\t-------------------------------");
+                        ticketNumber++;
+                    }
+
+                    Console.WriteLine("\n\t\t\t\tTickets printed successfully!");
                 }
                 else
                 {
-                    int ticketNumber = 0;
-                    foreach (Booking booking in userBookings)
-                    {
-                        Console.WriteLine($"Ticket {ticketNumber + 1}:");
-                        // Display movie details
-                        string uppercaseUsername = currentUser.Username.ToUpper();
-                        Console.WriteLine($"Name of customer: {uppercaseUsername}");
-                        Console.WriteLine($"Movie Title: {booking.Showtime.Movie.Title}");
-                        Console.WriteLine($"Genre: {booking.Showtime.Movie.Genre}");
-                        Console.WriteLine($"Realease Date: {booking.Showtime.Movie.ReleaseDate.ToShortDateString()}");
-                        Console.WriteLine($"Duration: {booking.Showtime.Movie.Duration} mins");
-                        Console.WriteLine($"Rating: {booking.Showtime.Movie.Rating}");
-                        Console.WriteLine($"Showtime: {booking.Showtime.DateTime}");
-                        Console.WriteLine($"Number of Tickets: {booking.NumTickets}");
-                        Console.WriteLine("=========================================================================");
-                        ticketNumber++;
-
-                    }
-                    if (ticketNumber > 0)
-                    {
-                        Console.WriteLine("\n\t\tYOUR TICKET(S) HAS BEEN PRINTED SUCCESSFULLY!! PLEASE PROCEED TO THE COUNTER FOR PAYMENT!");
-                    }
+                    Console.WriteLine("\n\t\t\t\tNo bookings found to print tickets.");
                 }
-                Console.WriteLine("\n\t\t\t\t      Press any key to return to the Main menu.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n\t\t\t\tAn error occurred while printing tickets: {ex.Message}");
+            }
+            finally
+            {
+                Console.WriteLine("\n\t\t\t\tPress any key to return to the Main menu.");
                 Console.ReadKey();
                 Console.Clear();
             }
         }
+
         static void Register()
         {
             Console.Clear();
@@ -569,4 +633,4 @@ namespace MidtermProject
             Console.Clear();
         }
     }
-}
+}   
